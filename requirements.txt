@@ -1,0 +1,8 @@
+gel
+passlib
+flask
+Flask-Limiter
+flask-cors
+firebase-admin
+iso3166
+gunicorn

@@ -1,0 +1,5 @@
+server {
+    listen 80;
+    server_name regulonlab.com www.regulonlab.com;
+    return 301 https://regulonlabs.com$request_uri;
+}
