@@ -1,0 +1,10 @@
+[Unit]
+Description=EdgeDB Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/docker run --rm --name edgedb -p 5656:5656 -v /var/lib/edgedb/data:/var/lib/edgedb/data edgedb/edgedb:latest
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

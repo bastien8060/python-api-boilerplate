@@ -1,8 +1,8 @@
 gel
-passlib
 flask
 Flask-Limiter
 flask-cors
-firebase-admin
-iso3166
 gunicorn
+httpx
+pydantic
+python-jose

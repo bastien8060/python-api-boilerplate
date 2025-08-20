@@ -1,106 +1,14 @@
 module default {
-    function generate_slug(title: str) -> str
-    using (
-        (
-            re_replace(
-                '[^a-zA-Z0-9-]',
-                '',
-                str_replace(
-                    str_lower(title),
-                    ' ',
-                    '-'
-                ),
-                flags := 'g'
-            )
-        )[0:50] ++ '_' ++ <str>(round(random() * 1000000))
-    );
-
-    abstract type Base{
-        required property created_at: datetime {
+    abstract type Base {
+        required property created_at -> datetime {
             default := datetime_current();
         }
-        required property updated_at: datetime{
+        required property updated_at -> datetime {
             default := datetime_current();
         }
     }
 
-    type SharedPassword extending Base{
-        required property key: str;
-        required property notes: str {
-            default := "";
-        }
-    }
-
-    type File extending Base{
-        # .ID is the filename
-        required property name: str;
-        required property mime_type: str;
-    }
-
-    type Post extending Base{
-        required property title: str;
-        property slug: str {
-            rewrite insert, update using (generate_slug(__subject__.title));
-            constraint exclusive;
-            default := generate_slug(.title);
-        }
-        required property content: str;
-        required property starred: bool {
-            default := false;
-        }
-
-        link author: User;
-        link file: File {
-            on target delete allow
-        };
-    }
-
-    type User extending Base{
-        required property email: str {
-            constraint exclusive;
-        }
-        required property username: str {
-            constraint exclusive;
-        }
-        required property fullname: str;
-        required property admin: bool {
-            default := false;
-        }
-
-        multi link posts := .<author[is Post];
-
-        link avatar: File { on target delete allow };
-        link banner: File { on target delete allow };
-        required property qualifications: array<str> {
-            default := <array<str>>[];
-        }
-        required property bio: str {
-            default := "";
-        }
-    }
-
-    type ProjectMember extending Base{
-        required property role: str;
-        single link user: User;
-        single link project: Project;
-    }
-
-    type Project extending Base{
-        required property slug: str { constraint exclusive; };
-        required property name: str;
-        required property description: str;
-        required property url: str;
-        required property tags: array<str> {
-            default := <array<str>>[];
-        }
-        required property featured: bool {
-            default := false;
-        }
-
-        # members
-        multi link members := .<project[is ProjectMember];
-
-        link banner: File { on target delete allow };
-        link logo: File { on target delete allow };
+    type Item extending Base {
+        required property name -> str;
     }
 }

@@ -3,61 +3,46 @@ from flask import jsonify, make_response
 
 logger = logging.getLogger(__name__)
 
-class RespHandler(object):
-    def __init__(self, debug=False):
+
+class RespHandler:
+    def __init__(self, debug: bool = False):
         self.debug = debug
-    
-    def get_handler(self, respType, args=None):
-        if hasattr(self, respType):
-            if args is None:
-                return getattr(self, respType)()
-            return getattr(self, respType)(args)
 
-        else:
-            logger.error(f"Unhandled Error: {respType}")
-            return self.unhandled_error(str(args))
-        
-    def invalid_request(self, error):
+    def ok(self, data=None, msg: str | None = None):
+        if data is None:
+            payload = {"status": "OK", "msg": msg}
+            return make_response(jsonify(payload), 200)
+        return jsonify(data)
+
+    def error(self, msg: str, status: int):
+        logger.error(f"[!] {status}: {msg}")
+        return make_response(jsonify({"status": "error", "msg": msg}), status)
+
+    def invalid_request(self, error: str):
         logger.warning(f"[!] invalid request: {error}")
-        return make_response(jsonify({"status": "Invalid Request", "msg": error}), 400)
+        return self.error(f"Invalid Request: {error}", 400)
 
-    def server_error(self, error):
-        logger.error(f"[!] server error: {error}")
-        return make_response(jsonify({"status": error}), 503)
+    def server_error(self, error: str):
+        return self.error(error, 503)
 
-    def unhandled_error(self, error):
-        logger.error(f"[!] unhandled error: {error}")
-        return make_response(jsonify({"status": "server error", "msg": error}), 503)
-
-    def unauthorized(self, error):
+    def unauthorized(self, error: str):
         logger.warning(f"[!] unauthorized: {error}")
-        return make_response(jsonify({"status": "Unauthorized", "msg": error}), 403)
+        return self.error(f"Unauthorized: {error}", 403)
 
-    def forbidden(self, error):
-        logger.warning(f"[!] forbidden: {error}")
-        return make_response(jsonify({"status": "Forbidden", "msg": error}), 403)
-
-    def token_auth(self):
+    def token_auth_failed(self):
         logger.warning("[!] token auth failed")
-        return make_response(jsonify({"status": "Unauthorized", "msg": "Incorrect Authorization (username or token)"}), 401)
+        return make_response(
+            jsonify({"status": "Unauthorized", "msg": "Incorrect Authorization (username or token)"}),
+            401,
+        )
 
     def rate_limit_exceeded(self):
         logger.warning("[!] rate limit exceeded")
         return make_response(jsonify({"status": "Rate Limit Exceeded"}), 429)
-    
-    def not_found(self, path):
+
+    def not_found(self, path: str):
         logger.warning("[!] not found")
-        return make_response(jsonify({"status": "Not Found", "msg": f"Resource not found: {path}"}), 404)
-    
-    def response_ok(self, args={}):
-        if "data" in args:
-            data = args["data"]
-            logger.info(f"[+] response OK: {data}")
-            return jsonify(data)
-        elif "msg" in args:
-            msg = args["msg"]
-            logger.info(f"response OK: {msg}")
-            return make_response(jsonify({"status": "OK", "msg": msg}), 200)
-        else:
-            logger.info("response OK")
-            return make_response(jsonify({"status": "OK"}), 200)
+        return make_response(
+            jsonify({"status": "Not Found", "msg": f"Resource not found: {path}"}),
+            404,
+        )
