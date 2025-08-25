@@ -3,13 +3,13 @@ version: "3.9"
 x-env: &api_env
   # App config
   DEBUG: ${DEBUG:-false}
-  # GelDB CLI config
+
+  # GelDB client (non-secret bits)
   GEL_HOST: ${GEL_HOST:?set in .env}
   GEL_PORT: ${GEL_PORT:?set in .env}
-  GEL_USER: ${GEL_USER:?set in .env}
-  GEL_PASSWORD: ${GEL_PASSWORD:?set in .env}
   GEL_CLIENT_TLS_SECURITY: ${GEL_CLIENT_TLS_SECURITY:?set in .env}
-  # OIDC config — prod points to remote Keycloak URL, local overrides below
+
+  # OIDC config — non-secrets
   KEYCLOAK_BASE_URL: ${KEYCLOAK_BASE_URL:?set in .env}
   KEYCLOAK_REALM: ${KEYCLOAK_REALM:?set in .env}
   KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:?set in .env}
@@ -23,32 +23,11 @@ services:
     env_file: .env
     environment:
       <<: *api_env
+      GEL_USER: ${GEL_USER:?define in GitHub Secrets or export in shell}
+      GEL_PASSWORD: ${GEL_PASSWORD:?define in GitHub Secrets or export in shell}
     depends_on:
       gel:
         condition: service_healthy
     ports:
       - "5000:5000"
     restart: always
-
-  gel:
-    image: geldata/gel:6              # pin major; update intentionally
-    environment:
-      GEL_SERVER_PASSWORD: ${GEL_SERVER_PASSWORD:?set in .env or secret}
-      GEL_SERVER_TLS_CERT_MODE: generate_self_signed
-      GEL_DOCKER_APPLY_MIGRATIONS: always
-      GEL_SERVER_ADMIN_UI: enabled
-    volumes:
-      - edgedb-prod-data:/var/lib/gel/data
-      - ./dbschema:/dbschema:ro
-    # ports:
-    #   - "5656:5656"
-
-    healthcheck:
-      test: ["CMD", "bash", "-lc", "printf '' >/dev/tcp/127.0.0.1/5656"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-    restart: always
-
-volumes:
-  edgedb-prod-data:
